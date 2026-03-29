@@ -1,229 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pro Dash: BOSS MODE</title>
-    <style>
-        :root { --neon: #00ff00; --bg: #050505; }
-        body {
-            display: flex; flex-direction: column; align-items: center;
-            margin: 0; background-color: var(--bg); font-family: 'Segoe UI', sans-serif;
-            color: white; touch-action: none; overflow: hidden;
-        }
-        #ui-top {
-            width: 95vw; max-width: 800px; display: flex; justify-content: space-between;
-            padding: 10px; font-weight: bold; z-index: 5;
-        }
-        #game-wrapper { position: relative; width: 95vw; max-width: 800px; }
-        canvas { border: 3px solid #333; border-radius: 12px; width: 100%; display: block; }
-        
-        .overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: center;
-            align-items: center; background: rgba(0,0,0,0.85); border-radius: 12px; z-index: 20;
-        }
-        .hidden { display: none !important; }
-        
-        .menu-btn {
-            background: #222; border: 2px solid var(--neon); color: white;
-            padding: 12px 24px; margin: 10px; cursor: pointer; border-radius: 8px;
-            font-weight: bold; transition: 0.2s;
-        }
-        .menu-btn:hover { background: var(--neon); color: black; }
-        
-        #shop-panel {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 85vw; height: 70vh; background: #111; border: 3px solid #444;
-            border-radius: 20px; padding: 20px; z-index: 100; overflow-y: auto;
-        }
-        .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; }
-        .shop-item { background: #222; padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; border: 2px solid #444; }
-        .shop-item.equipped { border-color: var(--neon); background: #1a331a; }
-
-        #boss-warning {
-            position: absolute; top: 20%; width: 100%; text-align: center;
-            color: #ff0044; font-size: 40px; font-weight: bold; text-shadow: 0 0 10px #ff0044;
-            animation: blink 0.5s infinite; z-index: 15;
-        }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pro Dash 2 ULTIMATE</title>
+<style>
+body{margin:0;background:#050505;color:#fff;font-family:Segoe UI,Arial;text-align:center;overflow:hidden}
+#top{display:flex;justify-content:space-between;max-width:820px;margin:8px auto;padding:0 10px}
+canvas{border:2px solid #333;border-radius:8px;background:#000;width:95vw;max-width:800px}
+button{padding:8px 14px;margin:4px;border:none;border-radius:6px;cursor:pointer;background:#333;color:#fff;font-weight:bold}
+#shop,#death{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:100}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:10px;width:90%;max-width:500px;margin-bottom:20px}
+.item{background:#222;padding:10px;border:2px solid #444;border-radius:6px;cursor:pointer;font-size:12px}
+.unlocked{border-color:#0f0}
+.equipped{background:#0f0;color:#000}
+#boss-warn{position:absolute;top:20%;width:100%;color:red;font-size:30px;display:none;font-weight:bold;animation:blink .5s infinite}
+@keyframes blink{50%{opacity:0}}
+</style>
 </head>
 <body>
-
-<div id="ui-top">
-    <div>💰 <span id="coins">0</span></div>
-    <div style="color:#00ffff">🏆 BEST: <span id="best-score-ui">0</span></div>
-    <div onclick="toggleShop()" style="cursor:pointer; color:var(--neon)">🛒 SHOP</div>
+<div id="top">
+<span>💰 <span id="coins">0</span></span>
+<span>Score: <span id="score">0</span> | High: <span id="high">0</span></span>
+<div>
+<button onclick="toggleShop()">Shop</button>
+<button onclick="pause()">Pause</button>
+</div>
 </div>
 
-<div id="game-wrapper">
-    <div id="boss-warning" class="hidden">WARNING: BOSS INBOUND!</div>
-    
-    <div id="death-screen" class="overlay hidden">
-        <h1 style="color: #ff0044; font-size: 50px;">CRASHED</h1>
-        <p>Score: <span id="last-score">0</span></p>
-        <button class="menu-btn" onclick="startGame()">TRY AGAIN</button>
-    </div>
+<div id="boss-warn">BOSS ATTACK!</div>
 
-    <div id="start-screen" class="overlay">
-        <h1 style="color: var(--neon); font-size: 60px;">PRO DASH</h1>
-        <p>Double Jump & Boss Fights Enabled</p>
-        <button class="menu-btn" onclick="startGame()">START</button>
-    </div>
-
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
+<div id="death">
+<h1 style="color:red">CRASHED</h1>
+<p>Score: <span id="finalScore">0</span></p>
+<button onclick="resetGame()" style="background:#0f0;color:#000;font-size:20px">RESTART</button>
 </div>
 
-<div id="shop-panel" class="hidden">
-    <div style="display:flex; justify-content:space-between;">
-        <h2>THEME & SKIN SHOP</h2>
-        <button class="menu-btn" onclick="toggleShop()">CLOSE</button>
-    </div>
-    <div class="item-grid" id="theme-grid"></div>
+<canvas id="c" width="800" height="400"></canvas>
+
+<div id="shop">
+<h2>SHOP</h2>
+<h3>Skins</h3>
+<div class="grid" id="skins"></div>
+<h3>Themes</h3>
+<div class="grid" id="themes"></div>
+<button onclick="toggleShop()">Close</button>
 </div>
 
 <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
+const ctx=c.getContext('2d');
 
-    let data = JSON.parse(localStorage.getItem("pro_dash_boss_v1")) || {
-        coins: 0, best: 0, equippedTheme: "Space", equippedSkin: "#00ff00"
-    };
+let data=JSON.parse(localStorage.getItem('pd2'))||{
+ coins:0,high:0,
+ skins:['green'],themes:['dark'],
+ eqSkin:'green',eqTheme:'dark'
+};
 
-    const themes = {
-        "Space": { bg: "#000015", ground: "#111", obstacle: "#ff3300" },
-        "Neon": { bg: "#0a0a0a", ground: "#222", obstacle: "#00ffff" },
-        "Lava": { bg: "#150000", ground: "#300", obstacle: "#ffcc00" }
-    };
+const skins=[{id:'green',p:0},{id:'red',p:5},{id:'cyan',p:10},{id:'gold',p:20},{id:'white',p:30}];
+const themes=[{id:'dark',c:'#000',p:0},{id:'space',c:'#020024',p:10},{id:'lava',c:'#220000',p:15},{id:'forest',c:'#001a00',p:15}];
 
-    let score = 0, speed = 6, gameActive = false, frame = 0, obstacles = [], powerups = [], bossProjectiles = [];
-    let bossActive = false, bossHP = 100, bossTimer = 0;
-    const groundY = 340;
+let p={x:100,y:300,w:40,h:40,dy:0,j:0};
+let obs=[],parts=[],bossAtks=[];
+let score=0,speed=6,run=true,frame=0,boss=false,bt=0;
 
-    const player = { x: 100, y: 300, w: 40, h: 40, dy: 0, jumps: 0, shielded: false };
+// SOUND
+const audio=new (window.AudioContext||window.webkitAudioContext)();
+function sfx(f,t,v,type='square'){
+ const o=audio.createOscillator(),g=audio.createGain();
+ o.type=type;o.frequency.setValueAtTime(f,audio.currentTime);
+ g.gain.setValueAtTime(v,audio.currentTime);
+ g.gain.exponentialRampToValueAtTime(0.001,audio.currentTime+t);
+ o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+t);
+}
 
-    function save() {
-        localStorage.setItem("pro_dash_boss_v1", JSON.stringify(data));
-        document.getElementById("coins").innerText = data.coins;
-        document.getElementById("best-score-ui").innerText = data.best;
-    }
+function save(){
+ localStorage.setItem('pd2',JSON.stringify(data));
+ coins.innerText=data.coins;high.innerText=data.high;
+ renderShop();
+}
 
-    function toggleShop() { document.getElementById("shop-panel").classList.toggle("hidden"); }
+function toggleShop(){shop.style.display=shop.style.display==='flex'?'none':'flex'}
 
-    function startGame() {
-        score = 0; speed = 6; obstacles = []; powerups = []; bossProjectiles = [];
-        bossActive = false; gameActive = true; frame = 0;
-        player.y = 300; player.dy = 0; player.shielded = false;
-        document.getElementById("death-screen").classList.add("hidden");
-        document.getElementById("start-screen").classList.add("hidden");
-        loop();
-    }
+function renderShop(){
+ skins.innerHTML='';themes.innerHTML='';
+ skins.forEach(s=>skins.appendChild(makeItem(s,data.skins,data.eqSkin,'skin')));
+ themes.forEach(t=>themes.appendChild(makeItem(t,data.themes,data.eqTheme,'theme')));
+}
 
-    function jump() {
-        if (player.jumps < 2) { player.dy = -15; player.jumps++; }
-    }
+function makeItem(it,list,eq,type){
+ let d=document.createElement('div');
+ let u=list.includes(it.id),e=eq===it.id;
+ d.className=`item ${u?'unlocked':''} ${e?'equipped':''}`;
+ d.innerText=u?(e?'EQUIPPED':'USE'):it.p+'💰';
+ d.onclick=()=>{
+  if(u){type==='skin'?data.eqSkin=it.id:data.eqTheme=it.id}
+  else if(data.coins>=it.p){data.coins-=it.p;list.push(it.id)}
+  save();
+ };
+ return d;
+}
 
-    function spawnBossAttack() {
-        let type = Math.random();
-        if (type > 0.5) { // Fireball
-            bossProjectiles.push({ x: 800, y: player.y, w: 20, h: 20, vx: -10, vy: 0, type: 'fireball' });
-        } else { // Laser Warning
-            bossProjectiles.push({ x: 0, y: groundY - 50, w: 800, h: 10, timer: 40, type: 'laser' });
-        }
-    }
+function jump(){
+ if(p.j<2){
+  p.dy=-15;p.j++;
+  sfx(400,0.1,0.1);
+  for(let i=0;i<6;i++)parts.push({x:p.x,y:p.y+40,vx:Math.random()*2-1,vy:Math.random()*2,l:20});
+ }
+}
 
-    function loop() {
-        if (!gameActive) return;
-        const theme = themes[data.equippedTheme];
-        ctx.fillStyle = theme.bg; ctx.fillRect(0, 0, 800, 400);
-        ctx.fillStyle = theme.ground; ctx.fillRect(0, groundY, 800, 60);
+function pause(){run=!run;if(run)loop()}
 
-        // Physics
-        player.dy += 0.8; player.y += player.dy;
-        if (player.y > groundY - player.h) { player.y = groundY - player.h; player.dy = 0; player.jumps = 0; }
+function spawnObs(){obs.push({x:850,w:40,h:Math.random()>0.5?40:80,p:0})}
 
-        // Boss Trigger
-        if (score > 0 && score % 100 === 0 && !bossActive) {
-            bossActive = true; bossTimer = 900; // 15 seconds at 60fps
-            document.getElementById("boss-warning").classList.remove("hidden");
-            setTimeout(() => document.getElementById("boss-warning").classList.add("hidden"), 2000);
-        }
+function update(){
+ p.dy+=.9;p.y+=p.dy;
+ if(p.y>300){p.y=300;p.dy=0;p.j=0}
 
-        if (bossActive) {
-            bossTimer--;
-            // Draw Boss Eye
-            ctx.fillStyle = "#ff0044"; ctx.beginPath(); ctx.arc(750, 150, 40 + Math.sin(frame*0.1)*10, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(750, 150, 15, 0, Math.PI*2); ctx.fill();
-            
-            if (frame % 40 === 0) spawnBossAttack();
-            if (bossTimer <= 0) {
-                bossActive = false; score += 1; data.coins += 5; save();
-            }
-        } else {
-            if (frame % 80 === 0) obstacles.push({ x: 850, w: 40, h: Math.random() > 0.7 ? 80 : 40, passed: false });
-        }
+ if(!boss){
+  if(frame%90===0)spawnObs();
+  if(score>0 && score%100===0){boss=true;bt=600;bossWarn.style.display='block';setTimeout(()=>bossWarn.style.display='none',2000)}
+ }else{
+  bt--;if(frame%50===0)bossAtks.push({x:800,y:p.y,w:20,h:20});
+  if(bt<=0){boss=false;data.coins+=5;save()}
+ }
 
-        // Projectiles
-        bossProjectiles.forEach((p, i) => {
-            if (p.type === 'fireball') {
-                p.x += p.vx; ctx.fillStyle = "#ffaa00"; ctx.fillRect(p.x, p.y, p.w, p.h);
-                if (player.x < p.x + p.w && player.x + player.w > p.x && player.y < p.y + p.h && player.y + player.h > p.y) gameOver();
-            } else {
-                p.timer--;
-                ctx.fillStyle = p.timer > 10 ? "rgba(255,0,0,0.2)" : "rgba(255,0,0,1)";
-                ctx.fillRect(p.x, p.y, p.w, p.h);
-                if (p.timer <= 0 && p.timer > -5 && player.y + player.h > p.y) gameOver();
-                if (p.timer < -10) bossProjectiles.splice(i, 1);
-            }
-        });
+ obs.forEach((o,i)=>{
+  o.x-=speed;
+  if(p.x<o.x+o.w&&p.x+p.w>o.x&&p.y+p.h>340-o.h)end();
+  if(o.x<-50)obs.splice(i,1);
+  if(o.x<p.x&&!o.p){o.p=1;score++;if(score%20===0){data.coins++;save()}}
+ });
 
-        // Obstacles
-        obstacles.forEach((o, i) => {
-            o.x -= speed; ctx.fillStyle = theme.obstacle; ctx.fillRect(o.x, groundY - o.h, o.w, o.h);
-            if (player.x < o.x + o.w - 5 && player.x + player.w > o.x + 5 && player.y + player.h > groundY - o.h + 5) gameOver();
-            if (!o.passed && o.x < player.x) { o.passed = true; score++; speed += 0.05; if(score % 25 === 0){ data.coins++; save(); }}
-            if (o.x < -100) obstacles.splice(i, 1);
-        });
+ bossAtks.forEach((a,i)=>{
+  a.x-=10;
+  if(p.x<a.x+a.w&&p.x+p.w>a.x&&p.y<a.y+a.h&&p.y+p.h>a.y)end();
+  if(a.x<-50)bossAtks.splice(i,1);
+ });
 
-        // Draw Player
-        ctx.fillStyle = data.equippedSkin; ctx.fillRect(player.x, player.y, player.w, player.h);
-        ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.strokeRect(player.x, player.y, player.w, player.h);
+ parts.forEach((pt,i)=>{pt.x+=pt.vx;pt.y+=pt.vy;pt.l--;if(pt.l<=0)parts.splice(i,1)});
 
-        ctx.fillStyle = "white"; ctx.font = "bold 22px Arial"; ctx.fillText("SCORE: " + score, 20, 35);
-        if(bossActive) ctx.fillText("BOSS TIME: " + Math.ceil(bossTimer/60), 320, 35);
+ speed+=0.001;scoreEl.innerText=score;
+}
 
-        frame++;
-        requestAnimationFrame(loop);
-    }
+function draw(){
+ let th=themes.find(t=>t.id===data.eqTheme);
+ ctx.fillStyle=th?th.c:'#000';ctx.fillRect(0,0,800,400);
+ ctx.fillStyle='#222';ctx.fillRect(0,340,800,60);
 
-    function gameOver() {
-        if (player.shielded) { player.shielded = false; return; }
-        gameActive = false;
-        if(score > data.best) data.best = score;
-        save();
-        document.getElementById("last-score").innerText = score;
-        document.getElementById("death-screen").classList.remove("hidden");
-    }
+ parts.forEach(pt=>{ctx.globalAlpha=pt.l/20;ctx.fillStyle='white';ctx.fillRect(pt.x,pt.y,3,3)});
+ ctx.globalAlpha=1;
 
-    function toggleShop() {
-        const panel = document.getElementById("shop-panel");
-        panel.classList.toggle("hidden");
-        const grid = document.getElementById("theme-grid");
-        grid.innerHTML = "";
-        Object.keys(themes).forEach(t => {
-            const div = document.createElement("div");
-            div.className = "shop-item " + (data.equippedTheme === t ? "equipped" : "");
-            div.innerText = t;
-            div.onclick = () => { data.equippedTheme = t; save(); toggleShop(); };
-            grid.appendChild(div);
-        });
-    }
+ ctx.fillStyle=data.eqSkin;ctx.fillRect(p.x,p.y,p.w,p.h);
+ ctx.strokeStyle='white';ctx.strokeRect(p.x,p.y,p.w,p.h);
 
-    window.addEventListener("keydown", (e) => { if(e.code === "Space") jump(); });
-    window.addEventListener("pointerdown", () => { if(gameActive) jump(); });
+ ctx.fillStyle='red';obs.forEach(o=>ctx.fillRect(o.x,340-o.h,o.w,o.h));
 
-    save();
+ if(boss){
+  ctx.fillStyle='#ff0044';ctx.beginPath();ctx.arc(750,150,40+Math.sin(frame*0.1)*10,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='orange';bossAtks.forEach(a=>ctx.fillRect(a.x,a.y,a.w,a.h));
+ }
+}
+
+function loop(){if(!run)return;update();draw();frame++;requestAnimationFrame(loop)}
+
+function end(){
+ run=false;sfx(100,0.5,0.2,'sawtooth');
+ finalScore.innerText=score;
+ if(score>data.high)data.high=score;
+ save();
+ death.style.display='flex';
+}
+
+function resetGame(){
+ score=0;speed=6;obs=[];bossAtks=[];parts=[];frame=0;boss=false;p.y=300;p.dy=0;run=true;
+ death.style.display='none';
+ save();loop();
+}
+
+window.addEventListener('keydown',e=>{if(e.code==='Space')jump()});
+c.addEventListener('pointerdown',jump);
+
+const coins=document.getElementById('coins');
+const high=document.getElementById('high');
+const scoreEl=document.getElementById('score');
+const shop=document.getElementById('shop');
+const skins=document.getElementById('skins');
+const themes=document.getElementById('themes');
+const bossWarn=document.getElementById('boss-warn');
+const death=document.getElementById('death');
+const finalScore=document.getElementById('finalScore');
+
+save();loop();
 </script>
 </body>
 </html>
